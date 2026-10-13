@@ -1,0 +1,55 @@
+{
+  "curl_loopback": {
+    "enabled": true,
+    "allowed_hosts": [
+      "localhost",
+      "127.0.0.1",
+      "::1"
+    ]
+  },
+
+  "gh_api_repo_read": {
+    "enabled": true,
+    "repository": "OWNER/REPOSITORY"
+  },
+
+  "gh_api_milestone_write": {
+    "enabled": true,
+    "repository": "OWNER/REPOSITORY"
+  },
+
+  "find_safe": {
+    "enabled": true,
+    "project_root": "/path/to/project"
+  },
+
+  "rg_safe": {
+    "enabled": true,
+    "project_root": "/path/to/project"
+  },
+
+  "git_push_safe": {
+    "enabled": true,
+    "project_root": "/path/to/project",
+    "allowed_remotes": [
+      "origin"
+    ]
+  },
+
+  "python_safe": {
+    "enabled": true,
+    "project_root": "/path/to/project",
+    "allowed_modules": [
+      "pytest",
+      "mypy",
+      "ruff",
+      "py_compile",
+      "compileall"
+    ]
+  },
+
+  "docker_safe": {
+    "enabled": true,
+    "project_root": "/path/to/project"
+  }
+}
