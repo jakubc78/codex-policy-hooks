@@ -10,12 +10,22 @@
 
   "gh_api_repo_read": {
     "enabled": true,
-    "repository": "OWNER/REPOSITORY"
+    "repository": "jakubc78/qnap-document-router"
+  },
+
+  "gh_repo_view": {
+    "enabled": true,
+    "repository": "jakubc78/qnap-document-router"
+  },
+
+  "gh_api_subissue_create": {
+    "enabled": true,
+    "repository": "jakubc78/qnap-document-router"
   },
 
   "gh_api_milestone_write": {
     "enabled": true,
-    "repository": "OWNER/REPOSITORY"
+    "repository": "jakubc78/qnap-document-router"
   },
 
   "find_safe": {
