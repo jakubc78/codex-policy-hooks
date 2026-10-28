@@ -12,6 +12,7 @@ auto-approving commands that would otherwise require manual permission.
 - exact QDR repository identity read
 - QDR native sub-issue POST syntax allowance
 - restricted milestone state updates
+- repository- and project-scoped native GitHub sub-issue linking
 - safe `find`
 - safe `rg`
 - restricted `git push`
@@ -93,3 +94,20 @@ Run:
 
     python3 dispatcher.py --self-test
     python3 test_validators.py
+    python3 -m unittest discover -s tests -v
+
+## QDR native issue hierarchy approvals
+
+Enable `gh_api_subissue_link` in your local (untracked) policy config with
+`repository: jakubc78/qnap-document-router` and `project_root` pointing to the
+checked-out QDR repository. This validator approves **only** a single explicit
+`gh api --method POST repos/jakubc78/qnap-document-router/issues/123/sub_issues -F sub_issue_id=456`
+command with numeric issue identifiers. It cannot verify whether the child
+already has a parent: callers must first verify hierarchy and read it back
+after linking. It does not approve generic writes or GitHub API access outside
+that repo. Existing GET validation remains separate.
+
+The policy hooks do not grant sandbox network access or override Codex's
+permission/approval layer. Run `python3 -m unittest discover -s tests -v`
+to execute the regression tests. Apply the reviewed change to the local hook
+checkout before using it.
