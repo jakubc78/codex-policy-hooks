@@ -46,6 +46,14 @@
     ]
   },
 
+  "git_ls_remote_safe": {
+    "enabled": true,
+    "project_root": "/path/to/project",
+    "allowed_remotes": [
+      "origin"
+    ]
+  },
+
   "python_safe": {
     "enabled": true,
     "project_root": "/path/to/project",

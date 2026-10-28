@@ -4,17 +4,7 @@ import shlex
 from pathlib import Path
 
 
-SHELL_OPERATORS = {
-    ";",
-    "&&",
-    "||",
-    "|",
-    "&",
-    ">",
-    ">>",
-    "<",
-    "<<",
-}
+SHELL_PUNCTUATION = ";&|<>"
 
 
 def contains_shell_operators(command: str | None) -> bool:
@@ -38,7 +28,12 @@ def contains_shell_operators(command: str | None) -> bool:
     except ValueError:
         return True
 
-    return any(token in SHELL_OPERATORS for token in tokens)
+    # shlex groups adjacent punctuation. Bash also accepts combinations
+    # such as |& and >&, so an exact-token allowlist misses real operators.
+    return any(
+        token and all(char in SHELL_PUNCTUATION for char in token)
+        for token in tokens
+    )
 
 
 def resolve_project_root(config: dict) -> Path | None:

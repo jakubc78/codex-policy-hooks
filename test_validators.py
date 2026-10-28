@@ -26,6 +26,17 @@ class TestCase:
     name: str
     command: str
     expected: Decision
+    cwd: str | None = None
+    config_override: dict | None = None
+
+
+LS_REMOTE_CONFIG = {
+    "git_ls_remote_safe": {
+        "enabled": True,
+        "project_root": str(BASE_DIR),
+        "allowed_remotes": ["origin"],
+    }
+}
 
 
 TEST_CASES = [
@@ -325,6 +336,48 @@ TEST_CASES = [
         "-f state=closed",
         Decision.ABSTAIN,
     ),
+
+    # git_ls_remote_safe
+    TestCase(
+        "git ls-remote origin", "git ls-remote origin", Decision.ALLOW,
+        config_override=LS_REMOTE_CONFIG,
+    ),
+    TestCase(
+        "git ls-remote HEAD", "git ls-remote origin HEAD", Decision.ALLOW,
+        config_override=LS_REMOTE_CONFIG,
+    ),
+    TestCase(
+        "git ls-remote heads", "git ls-remote --heads origin 'refs/heads/*'",
+        Decision.ALLOW, config_override=LS_REMOTE_CONFIG,
+    ),
+    TestCase(
+        "git ls-remote wrong remote", "git ls-remote upstream",
+        Decision.ABSTAIN, config_override=LS_REMOTE_CONFIG,
+    ),
+    TestCase(
+        "git ls-remote URL", "git ls-remote https://example.com/repo.git",
+        Decision.ABSTAIN, config_override=LS_REMOTE_CONFIG,
+    ),
+    TestCase(
+        "git ls-remote upload-pack", "git ls-remote --upload-pack=sh origin",
+        Decision.ABSTAIN, config_override=LS_REMOTE_CONFIG,
+    ),
+    TestCase(
+        "git ls-remote command chain", "git ls-remote origin; echo unsafe",
+        Decision.ABSTAIN, config_override=LS_REMOTE_CONFIG,
+    ),
+    TestCase(
+        "git ls-remote pipe stderr", "git ls-remote origin |& cat",
+        Decision.ABSTAIN, config_override=LS_REMOTE_CONFIG,
+    ),
+    TestCase(
+        "git ls-remote substitution", "git ls-remote origin $(printf HEAD)",
+        Decision.ABSTAIN, config_override=LS_REMOTE_CONFIG,
+    ),
+    TestCase(
+        "git ls-remote outside project", "git ls-remote origin",
+        Decision.ABSTAIN, cwd="/tmp", config_override=LS_REMOTE_CONFIG,
+    ),
 ]
 
 DISPATCHER_CASES = [
@@ -349,7 +402,21 @@ DISPATCHER_CASES = [
         "repos/jakubc78/qnap-document-router/milestones/5 "
         "-f state=closed ; gh api repos/openai/codex/issues",
         Decision.ABSTAIN,
-    )
+    ),
+    TestCase(
+        "gh API milestone stderr pipe cannot inherit allowance",
+        "gh api -X PATCH "
+        "repos/jakubc78/qnap-document-router/milestones/5 "
+        "-f state=closed |& cat",
+        Decision.ABSTAIN,
+    ),
+    TestCase(
+        "gh API milestone combined redirection cannot inherit allowance",
+        "gh api -X PATCH "
+        "repos/jakubc78/qnap-document-router/milestones/5 "
+        "-f state=closed >& /tmp/policy-review-output",
+        Decision.ABSTAIN,
+    ),
 ]
 
 
@@ -357,6 +424,7 @@ def evaluate_command(
     command: str,
     validators,
     config: dict,
+    cwd: str | None = None,
 ) -> tuple[Decision, list[str]]:
     payload = {
         "hook_event_name": "PermissionRequest",
@@ -364,7 +432,7 @@ def evaluate_command(
         "tool_input": {
             "command": command,
         },
-        "cwd": str(Path.cwd()),
+        "cwd": cwd or str(Path.cwd()),
     }
 
     ctx = Context.from_payload(payload)
@@ -455,7 +523,8 @@ def main() -> int:
             actual, reasons = evaluate_command(
                 test.command,
                 validators,
-                config,
+                {**config, **(test.config_override or {})},
+                test.cwd,
             )
         except Exception as exc:
             print(f"FAIL  {test.name}")
