@@ -17,6 +17,7 @@ auto-approving commands that would otherwise require manual permission.
 - safe `find`
 - safe `rg`
 - restricted `git push`
+- scoped `git worktree add -b` for new development worktrees
 - read-only `git ls-remote` for configured project remotes
 - restricted Python development tooling
 - restricted Docker operations
@@ -37,6 +38,7 @@ dispatcher.py
         +-- validators/find_safe.py
         +-- validators/rg_safe.py
         +-- validators/git_push_safe.py
+        +-- validators/git_worktree_safe.py
         +-- validators/git_ls_remote_safe.py
         +-- validators/python_safe.py
         +-- validators/docker_safe.py
@@ -157,6 +159,78 @@ Run:
     python3 dispatcher.py --self-test
     python3 test_validators.py
     python3 -m unittest discover -s tests -v
+
+## Safe Git worktree creation
+
+`git_worktree_safe` approves only this seven-token command shape:
+
+```bash
+git worktree add -b <NEW_BRANCH> <DESTINATION> <BASE_REF>
+```
+
+Add a dedicated section to the active policy config. The project root and
+worktree root must be absolute paths to existing directories; create the
+worktree root separately and keep it owned by the Codex user without group or
+world write permission (for example, mode `0700`):
+
+```json
+"git_worktree_safe": {
+  "enabled": true,
+  "project_root": "/home/jakub/projects/qnap-document-router",
+  "worktree_roots": ["/home/jakub/projects/qdr-worktrees"],
+  "allow_tmp_worktrees": false,
+  "tmp_name_prefix": "qdr-",
+  "allowed_branch_prefixes": ["codex/", "fix/", "feat/"],
+  "allowed_base_refs": ["origin/main"]
+}
+```
+
+The working directory must belong to the configured primary Git checkout,
+including a directory inside it. A nested unrelated repository and linked or
+bare repositories do not qualify. The branch must have an allowed prefix,
+pass Git's branch-name validation, and not already exist locally. The base
+must be an explicitly listed, existing, ordinary `origin/*` remote-tracking
+reference. The validator does not fetch it.
+
+By default, the destination must be a new, single-component child of a
+configured worktree root. The root must not be symlinked or inside the source
+checkout. Set `allow_tmp_worktrees` to `true` to additionally allow a new
+single-component path named `/tmp/qdr-<safe-identifier>`. The `/tmp` parent
+must have sticky-directory protection and an expected owner. This mode is
+disabled by default. In user namespaces, the host owner of `/tmp` may appear
+as UID 65534; the validator accepts that mapping as well as root ownership.
+
+Examples, assuming the QDR checkout and destination root above:
+
+```bash
+# Approved if the destination is absent
+git worktree add -b fix/199-codex-runner-exceptions /home/jakub/projects/qdr-worktrees/issue199 origin/main
+
+# Also approved only with allow_tmp_worktrees=true
+git worktree add -b fix/199-codex-runner-exceptions /tmp/qdr-issue199 origin/main
+
+# Normal approval applies
+git worktree add -B fix/199-codex-runner-exceptions /tmp/qdr-issue199 origin/main
+git worktree add --force -b fix/199-codex-runner-exceptions /tmp/qdr-issue199 origin/main
+git worktree add -b fix/199-codex-runner-exceptions /tmp/other-issue199 origin/main
+git worktree add -b fix/199-codex-runner-exceptions /tmp/qdr-issue199 HEAD~1
+git worktree remove /tmp/qdr-issue199
+```
+
+Git worktrees share branch refs and other repository metadata. Creating a
+branch affects the source repository even when the files go to another path.
+This validator only checks current state; another process can change a branch,
+ref, or filesystem path between validation and Git execution. The Codex
+sandbox remains the final filesystem boundary. An `ALLOW` from the hook does
+not grant filesystem access, bypass the sandbox, or guarantee the Git command
+will succeed. `DENY` explicitly blocks; `ABSTAIN` leaves the request to the
+normal approval flow.
+
+If approval still appears, check the active hook path and config, the exact
+command arguments, branch and base-ref state, destination existence and parent
+permissions, and whether Codex can write to that location under its sandbox.
+Run the dispatcher self-test and set `CODEX_POLICY_DEBUG=1` to see validator
+reasons on stderr.
 
 ## QDR native issue hierarchy approvals
 

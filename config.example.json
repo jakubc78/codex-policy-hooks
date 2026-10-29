@@ -38,6 +38,17 @@
       "origin"
     ]
   },
+  "git_worktree_safe": {
+    "enabled": true,
+    "project_root": "/path/to/qnap-document-router",
+    "worktree_roots": [
+      "/path/to/qdr-worktrees"
+    ],
+    "allow_tmp_worktrees": false,
+    "tmp_name_prefix": "qdr-",
+    "allowed_branch_prefixes": ["codex/", "fix/", "feat/"],
+    "allowed_base_refs": ["origin/main"]
+  },
   "git_ls_remote_safe": {
     "enabled": true,
     "project_root": "/path/to/project",
