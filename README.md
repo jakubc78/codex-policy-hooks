@@ -9,6 +9,7 @@ auto-approving commands that would otherwise require manual permission.
 
 - curl requests restricted to loopback
 - read-only GitHub API access scoped to one repository
+- read-only GitHub CLI diagnostics scoped to one repository and project root
 - exact QDR repository identity read
 - QDR native sub-issue POST syntax allowance
 - restricted milestone state updates
@@ -29,6 +30,7 @@ dispatcher.py
         |
         +-- validators/curl_loopback.py
         +-- validators/gh_api_repo_read.py
+        +-- validators/gh_diagnostics_safe.py
         +-- validators/gh_repo_view.py
         +-- validators/gh_api_subissue_create.py
         +-- validators/gh_api_milestone_write.py
@@ -87,6 +89,66 @@ Story → Task/Bug/Spike/Chore, refuses conflicting parents, and reads the
 relationship back after POST. A hook allowance does not grant network access,
 GitHub authentication, or Issues write permission. Codex sandbox network
 restrictions may still require a command-scoped escalation.
+
+### GitHub diagnostics
+
+Add this section to the active policy `config.json`, using the exact repository
+and absolute path of its checked-out project root:
+
+```json
+"gh_diagnostics_safe": {
+  "enabled": true,
+  "repository": "jakubc78/qnap-document-router",
+  "project_root": "/home/jakub/projects/qnap-document-router",
+  "allow_failed_logs": true,
+  "allow_full_logs": false
+}
+```
+
+The `repository` is a single-entry allowlist. The command must specify it with
+`--repo OWNER/REPOSITORY` (or `--repo=OWNER/REPOSITORY`) and run from the
+configured root or a directory inside it. Missing, disabled, or invalid
+configuration causes `ABSTAIN`. `--log-failed` requires `allow_failed_logs`;
+`--log` requires the separate `allow_full_logs` opt-in.
+
+Supported operations are `gh run view` with a positive numeric run ID,
+`gh run list`, `gh pr checks` and `gh pr view` with a positive numeric PR
+number, and `gh issue view` with a positive numeric issue number. The only
+accepted options are `--repo`, `--log-failed`, and `--log` in their stated
+contexts. `--json`, `--jq`, and `--limit` are not approved because they add
+argument parsing and output behavior that this validator has not scoped.
+
+Examples from the configured project root:
+
+```bash
+# Approved when failed logs are enabled
+gh run view 40910865463 --repo jakubc78/qnap-document-router --log-failed
+gh run view 40910865463 --repo jakubc78/qnap-document-router
+gh run list --repo jakubc78/qnap-document-router
+gh pr checks 123 --repo jakubc78/qnap-document-router
+gh pr view 123 --repo jakubc78/qnap-document-router
+gh issue view 123 --repo jakubc78/qnap-document-router
+
+# Not auto-approved; normal Codex approval applies
+gh run view 40910865463 --repo someone/other-repo --log-failed
+gh run view 40910865463 --log-failed
+gh run view abc --repo jakubc78/qnap-document-router
+gh run view 40910865463 --repo jakubc78/qnap-document-router | cat
+gh run rerun 40910865463 --repo jakubc78/qnap-document-router
+gh pr merge 123 --repo jakubc78/qnap-document-router
+```
+
+CI logs can contain credentials or other sensitive data even though reading
+them does not change GitHub state. Enable log access only where workers may
+see that information, and avoid copying logs into unrelated outputs.
+
+Hook approval does not grant network access through the Codex sandbox or
+provide GitHub authentication. If a command still prompts, check the active
+hook path and policy config, the command's exact arguments, the working
+directory, and whether the requested log option is enabled. Run
+`python3 dispatcher.py --self-test` to confirm the validator loads. With
+`CODEX_POLICY_DEBUG=1`, dispatcher reasons appear on stderr; do not paste
+debug output publicly if it contains sensitive command arguments.
 
 ## Self-test
 

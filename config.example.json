@@ -11,12 +11,10 @@
     "enabled": true,
     "repository": "jakubc78/qnap-document-router"
   },
-
   "gh_repo_view": {
     "enabled": true,
     "repository": "jakubc78/qnap-document-router"
   },
-
   "gh_api_subissue_create": {
     "enabled": true,
     "repository": "jakubc78/qnap-document-router"
@@ -66,5 +64,12 @@
     "enabled": true,
     "repository": "OWNER/REPOSITORY",
     "project_root": "/path/to/project"
+  },
+  "gh_diagnostics_safe": {
+    "enabled": true,
+    "repository": "jakubc78/qnap-document-router",
+    "project_root": "/path/to/qnap-document-router",
+    "allow_failed_logs": true,
+    "allow_full_logs": false
   }
 }
