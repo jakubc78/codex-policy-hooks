@@ -11,6 +11,13 @@
     "enabled": true,
     "repository": "OWNER/REPOSITORY"
   },
+  "gh_diagnostics_safe": {
+    "enabled": true,
+    "repository": "jakubc78/qnap-document-router",
+    "project_root": "/path/to/qnap-document-router",
+    "allow_failed_logs": true,
+    "allow_full_logs": false
+  },
   "gh_api_milestone_write": {
     "enabled": true,
     "repository": "OWNER/REPOSITORY"
