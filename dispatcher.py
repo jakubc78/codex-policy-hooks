@@ -29,6 +29,8 @@ CONFIG_PATH = BASE_DIR / "config.json"
 if str(VALIDATORS_DIR) not in sys.path:
     sys.path.insert(0, str(VALIDATORS_DIR))
 
+from _helpers import contains_shell_operators
+
 
 class Decision(str, Enum):
     ALLOW = "allow"
@@ -323,6 +325,20 @@ def main() -> int:
         return 0
 
     ctx = Context.from_payload(payload)
+
+    # Never let one approved GitHub operation authorize another shell segment.
+    if (
+        ctx.argv[:1] == ["gh"]
+        and (
+            contains_shell_operators(ctx.command)
+            or (
+                ctx.command is not None
+                and any(char in ctx.command for char in ("$", "`", "\n", "\r"))
+            )
+        )
+    ):
+        debug("GitHub command contains shell expansion or control syntax")
+        return 0
 
     debug(f"Tool name: {ctx.tool_name}")
     debug(f"CWD: {ctx.cwd}")

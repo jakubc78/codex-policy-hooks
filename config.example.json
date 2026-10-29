@@ -9,18 +9,19 @@
   },
   "gh_api_repo_read": {
     "enabled": true,
-    "repository": "OWNER/REPOSITORY"
+    "repository": "jakubc78/qnap-document-router"
   },
-  "gh_diagnostics_safe": {
+  "gh_repo_view": {
     "enabled": true,
-    "repository": "jakubc78/qnap-document-router",
-    "project_root": "/path/to/qnap-document-router",
-    "allow_failed_logs": true,
-    "allow_full_logs": false
+    "repository": "jakubc78/qnap-document-router"
+  },
+  "gh_api_subissue_create": {
+    "enabled": true,
+    "repository": "jakubc78/qnap-document-router"
   },
   "gh_api_milestone_write": {
     "enabled": true,
-    "repository": "OWNER/REPOSITORY"
+    "repository": "jakubc78/qnap-document-router"
   },
   "find_safe": {
     "enabled": true,
@@ -31,6 +32,13 @@
     "project_root": "/path/to/project"
   },
   "git_push_safe": {
+    "enabled": true,
+    "project_root": "/path/to/project",
+    "allowed_remotes": [
+      "origin"
+    ]
+  },
+  "git_ls_remote_safe": {
     "enabled": true,
     "project_root": "/path/to/project",
     "allowed_remotes": [
@@ -56,5 +64,12 @@
     "enabled": true,
     "repository": "OWNER/REPOSITORY",
     "project_root": "/path/to/project"
+  },
+  "gh_diagnostics_safe": {
+    "enabled": true,
+    "repository": "jakubc78/qnap-document-router",
+    "project_root": "/path/to/qnap-document-router",
+    "allow_failed_logs": true,
+    "allow_full_logs": false
   }
 }
