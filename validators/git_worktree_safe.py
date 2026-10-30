@@ -68,11 +68,9 @@ def _safe_parent(parent: Path, *, temporary: bool) -> bool:
     if temporary:
         # Some sandboxes map the host's root-owned /tmp to the overflow uid.
         return (parent == Path("/tmp") and info.st_uid in (0, 65534)
-                and bool(info.st_mode & stat.S_ISVTX)
-                and os.access(parent, os.W_OK | os.X_OK))
+                and bool(info.st_mode & stat.S_ISVTX))
     return (info.st_uid == os.getuid()
-            and not bool(info.st_mode & (stat.S_IWGRP | stat.S_IWOTH))
-            and os.access(parent, os.W_OK | os.X_OK))
+            and not bool(info.st_mode & (stat.S_IWGRP | stat.S_IWOTH)))
 
 
 def _valid_base(root: Path, base: object) -> bool:
